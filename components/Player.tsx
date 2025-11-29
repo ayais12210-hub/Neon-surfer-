@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber';
 import { Vector3, Group, MathUtils } from 'three';
 import { useGameStore } from '../store';
 import { Lane, LANE_WIDTH, JUMP_DURATION, SLIDE_DURATION, CHARACTERS } from '../types';
-import { Trail, RoundedBox, useTexture } from '@react-three/drei';
+import { Trail, RoundedBox } from '@react-three/drei';
 import { audioManager } from '../audio';
 import { virtualJoystick } from '../controls';
 import { triggerShake } from '../effects';

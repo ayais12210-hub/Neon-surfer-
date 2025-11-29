@@ -1,9 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { GameCanvas } from './components/GameCanvas';
 import { useGameStore } from './store';
 import { 
   Play, RotateCcw, Trophy, Zap, Coins, Volume2, VolumeX, Shield, 
-  Disc, FastForward, Share2, Menu as MenuIcon, Pause, User, ChevronRight, ChevronLeft, BarChart3, ShoppingCart, Lock, ArrowUpCircle, X, CheckCircle, Calendar, Clock, Music, LogOut, Award, Users, Globe, Copy, Gift
+  Star, ChevronsRight, Share2, Menu as MenuIcon, Pause, User, ChevronRight, ChevronLeft, Activity, ShoppingCart, Lock, ChevronUp, X, CheckCircle, Calendar, Clock, Music, LogOut, Award, Users, Globe, Copy, Gift
 } from 'lucide-react';
 import clsx from 'clsx';
 import { audioManager } from './audio';
@@ -38,7 +39,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, onClaim }) => 
                   {challenge.objective === 'COLLECT_COINS' && <Coins className="w-6 h-6" />}
                   {challenge.objective === 'SCORE_TOTAL' && <Trophy className="w-6 h-6" />}
                   {challenge.objective === 'USE_POWERUPS' && <Zap className="w-6 h-6" />}
-                  {challenge.objective === 'RUN_DISTANCE' && <FastForward className="w-6 h-6" />}
+                  {challenge.objective === 'RUN_DISTANCE' && <ChevronsRight className="w-6 h-6" />}
               </div>
               <div>
                   <h4 className="font-bold text-lg text-white leading-tight">{challenge.description}</h4>
@@ -151,7 +152,9 @@ function App() {
 
     // Push a dummy state to history to capture the back button on mobile web/hybrid
     if (status !== 'idle' && status !== 'login') {
-        window.history.pushState(null, '', window.location.pathname);
+        try {
+            window.history.pushState(null, '', window.location.pathname);
+        } catch(e) { /* ignore history errors in restricted environments */ }
     }
 
     const handlePopState = (event: PopStateEvent) => {
@@ -159,7 +162,9 @@ function App() {
         const handled = handleBackAction();
         if (handled) {
             // Push state again so we can catch the next back button press
-            window.history.pushState(null, '', window.location.pathname);
+            try {
+                window.history.pushState(null, '', window.location.pathname);
+            } catch(e) { /* ignore */ }
         }
     };
 
@@ -225,7 +230,7 @@ function App() {
       selectCharacter(CHARACTERS[newIndex].id);
   }
 
-  const hasUnclaimedChallenges = challenges.some(c => c.isCompleted && !c.isClaimed);
+  const hasUnclaimedChallenges = challenges && challenges.some(c => c.isCompleted && !c.isClaimed);
 
   // --- RENDER ---
 
@@ -238,6 +243,12 @@ function App() {
               <LoginPage />
           </div>
       )
+  }
+
+  // Safety check if user is null but status isn't login (should happen via store but good for crashes)
+  if (!user && status !== 'login') {
+     // UseGameStore should handle this via status, but as a fallback:
+     return <div className="w-full h-full bg-black flex items-center justify-center text-white">Loading User Profile...</div>;
   }
 
   return (
@@ -351,21 +362,21 @@ function App() {
 
         {/* ACTIVE POWERUPS HUD */}
         <div className="flex flex-col gap-2 items-center pointer-events-none">
-             {activePowerups.shield && (
+             {activePowerups?.shield && (
                  <div className="flex items-center gap-2 bg-cyan-900/80 backdrop-blur border border-cyan-400 px-4 py-2 rounded-lg animate-pulse">
                      <Shield className="w-6 h-6 text-cyan-200" />
                      <span className="font-bold text-cyan-200">SHIELD ACTIVE</span>
                  </div>
              )}
-             {activePowerups.multiplier > 0 && (
+             {activePowerups?.multiplier > 0 && (
                  <div className="flex items-center gap-2 bg-yellow-900/80 backdrop-blur border border-yellow-400 px-4 py-2 rounded-lg">
-                     <Disc className="w-6 h-6 text-yellow-200" />
+                     <Star className="w-6 h-6 text-yellow-200" />
                      <span className="font-bold text-yellow-200">2X SCORE ({activePowerups.multiplier.toFixed(1)}s)</span>
                  </div>
              )}
-             {activePowerups.speedBoost > 0 && (
+             {activePowerups?.speedBoost > 0 && (
                  <div className="flex items-center gap-2 bg-fuchsia-900/80 backdrop-blur border border-fuchsia-400 px-4 py-2 rounded-lg">
-                     <FastForward className="w-6 h-6 text-fuchsia-200" />
+                     <ChevronsRight className="w-6 h-6 text-fuchsia-200" />
                      <span className="font-bold text-fuchsia-200">HYPER SPEED ({activePowerups.speedBoost.toFixed(1)}s)</span>
                  </div>
              )}
@@ -522,7 +533,7 @@ function App() {
                    {/* UPGRADES SECTION */}
                    <div className="space-y-6">
                        <h3 className="text-xl font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                           <ArrowUpCircle className="w-5 h-5" /> Tech Upgrades
+                           <ChevronUp className="w-5 h-5" /> Tech Upgrades
                        </h3>
                        
                        {/* Multiplier Upgrade */}
@@ -530,7 +541,7 @@ function App() {
                            <div className="flex justify-between items-start mb-4">
                                <div className="flex items-center gap-3">
                                    <div className="p-3 bg-yellow-900/30 rounded-lg border border-yellow-500/30">
-                                       <Disc className="w-6 h-6 text-yellow-400" />
+                                       <Star className="w-6 h-6 text-yellow-400" />
                                    </div>
                                    <div>
                                        <h4 className="font-bold text-lg">Score Matrix</h4>
@@ -572,7 +583,7 @@ function App() {
                            <div className="flex justify-between items-start mb-4">
                                <div className="flex items-center gap-3">
                                    <div className="p-3 bg-fuchsia-900/30 rounded-lg border border-fuchsia-500/30">
-                                       <FastForward className="w-6 h-6 text-fuchsia-400" />
+                                       <ChevronsRight className="w-6 h-6 text-fuchsia-400" />
                                    </div>
                                    <div>
                                        <h4 className="font-bold text-lg">Flux Engine</h4>
@@ -644,10 +655,10 @@ function App() {
                             <Clock className="w-5 h-5 text-yellow-400" /> Daily Challenges
                         </h3>
                         <div className="grid gap-4">
-                            {challenges.filter(c => c.type === 'DAILY').map(challenge => (
+                            {challenges && challenges.filter(c => c.type === 'DAILY').map(challenge => (
                                 <ChallengeCard key={challenge.id} challenge={challenge} onClaim={() => claimChallengeReward(challenge.id)} />
                             ))}
-                            {challenges.filter(c => c.type === 'DAILY').length === 0 && (
+                            {challenges && challenges.filter(c => c.type === 'DAILY').length === 0 && (
                                 <div className="text-gray-500 italic p-4 border border-dashed border-gray-800 rounded-xl">No active daily challenges. Check back later.</div>
                             )}
                         </div>
@@ -659,10 +670,10 @@ function App() {
                             <Calendar className="w-5 h-5 text-purple-400" /> Weekly Challenges
                         </h3>
                         <div className="grid gap-4">
-                             {challenges.filter(c => c.type === 'WEEKLY').map(challenge => (
+                             {challenges && challenges.filter(c => c.type === 'WEEKLY').map(challenge => (
                                 <ChallengeCard key={challenge.id} challenge={challenge} onClaim={() => claimChallengeReward(challenge.id)} />
                             ))}
-                             {challenges.filter(c => c.type === 'WEEKLY').length === 0 && (
+                             {challenges && challenges.filter(c => c.type === 'WEEKLY').length === 0 && (
                                 <div className="text-gray-500 italic p-4 border border-dashed border-gray-800 rounded-xl">No active weekly challenges.</div>
                             )}
                         </div>
@@ -840,7 +851,7 @@ function App() {
 
                   <div className="w-full md:w-80 bg-black/60 backdrop-blur-xl p-6 rounded-2xl border border-white/10 shadow-2xl">
                       <div className="flex items-center gap-2 mb-6 border-b border-white/10 pb-4">
-                          <BarChart3 className="w-5 h-5 text-cyan-400" />
+                          <Activity className="w-5 h-5 text-cyan-400" />
                           <span className="font-bold tracking-wider">SPECS</span>
                       </div>
                       

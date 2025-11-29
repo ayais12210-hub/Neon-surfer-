@@ -1,7 +1,5 @@
-
 import React, { useState } from 'react';
 import { useGameStore } from '../store';
-import { Play } from 'lucide-react';
 import clsx from 'clsx';
 
 export const LoginPage: React.FC = () => {

@@ -7,18 +7,34 @@ interface ExtendedGameState extends GameState {
   toggleMute: () => void;
 }
 
+const STORE_VERSION = '1.0.3'; // Increment this to force reset local storage
+
 // --- PERSISTENCE HELPERS ---
 
 const getStorage = (key: string, def: any) => {
   try {
+    const version = localStorage.getItem('neon-surfer-version');
+    if (version !== STORE_VERSION) {
+        // Clear old data if version mismatch to prevent crashes
+        console.warn('Storage version mismatch. Clearing data.');
+        localStorage.clear();
+        localStorage.setItem('neon-surfer-version', STORE_VERSION);
+        return def;
+    }
+
     const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : def;
-  } catch { return def; }
+    if (!saved) return def;
+    const parsed = JSON.parse(saved);
+    return parsed !== null && parsed !== undefined ? parsed : def;
+  } catch (e) { 
+    return def; 
+  }
 };
 
 const setStorage = (key: string, val: any) => {
   try {
     localStorage.setItem(key, JSON.stringify(val));
+    localStorage.setItem('neon-surfer-version', STORE_VERSION);
   } catch {}
 };
 
@@ -59,7 +75,7 @@ const generateChallenge = (type: ChallengeType): Challenge => {
   }
 
   return {
-    id: Math.random().toString(36).substr(2, 9),
+    id: Math.random().toString(36).slice(2, 11),
     type,
     objective,
     description,
@@ -128,6 +144,7 @@ export const useGameStore = create<ExtendedGameState>((set, get) => ({
   
   upgrades: getStorage('neon-surfer-upgrades', { multiplier: 1, speed: 1 }),
   
+  // Default this to safe object, do not trust storage completely here as it's not persisted usually
   activePowerups: {
     shield: false,
     multiplier: 0,
@@ -148,11 +165,11 @@ export const useGameStore = create<ExtendedGameState>((set, get) => ({
     
     // Mock User Data
     const mockUser: UserProfile = {
-      id: 'usr_' + Math.random().toString(36).substr(2, 9),
+      id: 'usr_' + Math.random().toString(36).slice(2, 11),
       name: 'NeoRunner_' + Math.floor(Math.random() * 999),
       email: 'player@neontemple.com',
       avatar: `https://api.dicebear.com/9.x/avataaars/svg?seed=${Math.random()}&backgroundColor=b6e3f4`,
-      referralCode: Math.random().toString(36).substr(2, 6).toUpperCase()
+      referralCode: Math.random().toString(36).slice(2, 8).toUpperCase()
     };
 
     setStorage('neon-surfer-user', mockUser);
@@ -339,6 +356,9 @@ export const useGameStore = create<ExtendedGameState>((set, get) => ({
   },
   
   tickPowerups: (delta) => set(state => {
+    // Safety check if activePowerups is undefined
+    if (!state.activePowerups) return { activePowerups: { shield: false, multiplier: 0, speedBoost: 0 } };
+    
     const { multiplier, speedBoost } = state.activePowerups;
     if (multiplier <= 0 && speedBoost <= 0) return {};
     
@@ -355,7 +375,8 @@ export const useGameStore = create<ExtendedGameState>((set, get) => ({
 
   initChallenges: () => set(state => {
     const now = Date.now();
-    let current = [...state.challenges];
+    // Default to empty array if state.challenges is null/undefined
+    let current = [...(state.challenges || [])];
     let changed = false;
 
     // Filter out expired (that are claimed or not completed) 
@@ -385,6 +406,7 @@ export const useGameStore = create<ExtendedGameState>((set, get) => ({
   }),
 
   reportProgress: (type, amount) => set(state => {
+    if (!state.challenges) return {};
     const updatedChallenges = state.challenges.map(c => {
        if (c.objective === type && !c.isCompleted) {
          const newProgress = Math.min(c.progress + amount, c.target);
@@ -403,6 +425,7 @@ export const useGameStore = create<ExtendedGameState>((set, get) => ({
   }),
 
   claimChallengeReward: (id) => set(state => {
+     if (!state.challenges) return {};
      const challenge = state.challenges.find(c => c.id === id);
      if (!challenge || !challenge.isCompleted || challenge.isClaimed) return {};
 

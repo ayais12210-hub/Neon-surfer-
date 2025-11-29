@@ -57,7 +57,7 @@ export const Track: React.FC<{ playerRef: any }> = ({ playerRef }) => {
     else type = ObstacleType.FALLING_OBSTACLE;
     
     return {
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.random().toString(36).slice(2, 11),
       type,
       lane,
       z: zPosition,
